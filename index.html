@@ -1,264 +1,125 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Medical Navigation Hub — Clinical Trials</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Journey to Health — Trials Finder (Reliable Embed-first)</title>
 <style>
   :root { color-scheme: light; }
-  body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f9fbfd; }
-  header { background: #0b6ea9; color: white; padding: 16px; text-align: center; font-size: 1.25rem; }
-  .container { padding: 20px; max-width: 1100px; margin: auto; }
-  .card { background: white; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.06); padding: 16px; margin: 12px 0; }
-  h2 { color: #0b6ea9; margin: 0 0 10px; }
-  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center }
-  .button { display: inline-block; padding: 8px 12px; margin: 4px 0; background: #0b6ea9; color: white; text-decoration: none; border-radius: 8px; cursor: pointer; border: none; }
-  .button.secondary { background: #e8f1f9; color: #0b3a55; }
-  input { padding:10px; border-radius:8px; border:1px solid #d7e2ea; min-width:260px }
-  #map { height: 420px; width: 100%; border-radius: 12px; }
-  .trial-row { padding: 10px 0; border-bottom: 1px solid #eef3f7; }
+  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background: #f5f8fb; }
+  header { background: #0b6ea9; color: #fff; padding: 16px; text-align: center; font-weight: 600; }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 20px; }
+  .card { background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.05); padding: 16px; margin: 12px 0; }
+  h2 { margin: 0 0 10px; color: #0b6ea9; font-size: 1.2rem; }
+  .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center }
+  label { font-size: 14px; color: #234; }
+  input, select { padding: 10px; border: 1px solid #d8e2ea; border-radius: 8px; font: inherit; }
+  input[type="checkbox"] { width: auto; height: auto; }
   .muted { color: #5a6b78; font-size: 13px; }
-  .badge { display:inline-block; padding:2px 8px; background:#eef6fb; color:#0a4561; border-radius:999px; font-size:12px; margin-left:6px; }
+  .btn { background:#0b6ea9; color:#fff; border:none; border-radius:8px; padding:10px 14px; cursor:pointer; }
+  .btn.secondary { background:#e8f1f9; color:#0b3a55; }
+  .block-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px }
+  .sublink { font-size: 12px; }
+  .hr { height:1px; background:#ecf1f5; margin:12px 0 }
   .pill { display:inline-block; padding:2px 6px; border-radius:999px; background:#fff3cd; color:#7a4d00; border:1px solid #ffe08a; font-size:12px }
-  .modal { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 1000; }
-  .modal[aria-hidden="false"] { display: flex; }
-  .modal-card { background: #fff; max-width: 760px; width: 100%; border-radius: 12px; padding: 16px; box-shadow: 0 12px 32px rgba(0,0,0,.25); }
-  .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-  .note { font-size: 12px; margin-left:8px }
 </style>
 </head>
 <body>
-<header>Medical Navigation Hub — Clinical Trials</header>
-<div class="container">
+<header>Journey to Health — Clinical Trials Finder</header>
+<div class="wrap">
+
   <div class="card">
-    <h2>Mode & Search</h2>
+    <h2>Patient-friendly search (opens official sites)</h2>
+    <p class="muted">Best for reliability today. Enter what you’re looking for and we’ll open matching searches on official registries in new tabs. You can refine on those pages without any blockers.</p>
+
     <div class="row">
-      <label><input type="radio" name="mode" value="live"> Live (ClinicalTrials.gov)</label>
-      <label><input type="radio" name="mode" value="demo"> Demo (no internet needed)</label>
-      <span class="muted" id="modeNote"></span>
+      <label>Condition / keywords<br>
+        <input id="q" placeholder="e.g., myelodysplastic syndrome, U2AF1, clonal cytopenia" style="min-width:320px">
+      </label>
+      <label>Recruiting only<br>
+        <input id="recr" type="checkbox"> <span class="muted">applies on ClinicalTrials.gov page</span>
+      </label>
+      <label>Phase (optional)<br>
+        <select id="phase">
+          <option value="">Any</option>
+          <option>Phase 1</option>
+          <option>Phase 2</option>
+          <option>Phase 3</option>
+          <option>Phase 4</option>
+        </select>
+      </label>
     </div>
-    <div style="margin-top:10px" class="row">
-      <input id="condition" placeholder="Enter condition, gene, or keyword (e.g., CCUS, U2AF1)" />
-      <button class="button" onclick="runSearch()">Search</button>
-      <button class="button secondary" onclick="document.getElementById('condition').value=''; runSearch();">Reset</button>
+
+    <div class="block-actions">
+      <button class="btn" onclick="openCtGov()">Open ClinicalTrials.gov</button>
+      <button class="btn secondary" onclick="openWHO()">Open WHO (global)</button>
+      <button class="btn secondary" onclick="openEU()">Open EU CTIS</button>
+      <button class="btn secondary" onclick="openPubMed()">Open PubMed (papers)</button>
+      <button class="btn secondary" onclick="openRePORTER()">Open NIH RePORTER (grants)</button>
     </div>
+
+    <div class="hr"></div>
+    <p class="muted"><span class="pill">Tip</span> Start with ClinicalTrials.gov for U.S. coverage. Use WHO and EU CTIS to widen globally. PubMed/RePORTER give background on who’s active in the field.</p>
   </div>
 
   <div class="card">
-    <h2>Results</h2>
-    <div id="results"></div>
+    <h2>What we’ll build next</h2>
+    <ul class="muted" style="margin:0 0 0 16px">
+      <li>Unified results list here with simple language and contact buttons</li>
+      <li>Filters: distance from ZIP, age/sex eligibility, phase toggles</li>
+      <li>“Why this might fit you” notes and a printable summary</li>
+    </ul>
   </div>
 
-  <div class="card">
-    <h2>Map</h2>
-    <div id="map"></div>
-  </div>
-
-  <div class="card">
-    <h2>NIH & NLM Research Finder</h2>
-    <p class="muted">Use this to discover related NIH‑funded grants (RePORTER) and papers (PubMed). In Demo mode, results are sample data. In Live mode, links open official NIH pages.</p>
-    <div class="row">
-      <input id="nihq" placeholder="Enter topic, gene, condition (e.g., U2AF1, clonal cytopenia)" />
-      <button class="button" onclick="searchNIHGrants()">Search NIH Grants</button>
-      <button class="button secondary" onclick="openPubMed()">Search PubMed</button>
-    </div>
-    <div id="nihResults" style="margin-top:10px"></div>
-  </div>
-</div>
-
-<!-- Details Modal -->
-<div id="detailsModal" class="modal" role="dialog" aria-hidden="true" aria-labelledby="modalTitle">
-  <div class="modal-card">
-    <div class="modal-head">
-      <h3 id="modalTitle" style="margin:0">Trial Details</h3>
-      <button class="button secondary" onclick="closeModal()" aria-label="Close">Close</button>
-    </div>
-    <div id="modalBody" class="muted"></div>
-  </div>
 </div>
 
 <script>
-  // Map init
-  const map = L.map('map').setView([37.8, -96], 4);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors' }).addTo(map);
-
-  // State
-  let currentTrials = [];
-  const geocodeCache = {};
-
-  // Hosting detection
-  const isFile = location.protocol === 'file:';
-  const isHosted = location.protocol.startsWith('http');
-
-  function getMode(){
-    const checked = document.querySelector('input[name="mode"]:checked');
-    return checked ? checked.value : (isFile ? 'demo' : 'live');
-  }
-  function setInitialMode(){
-    const defaultMode = (isFile ? 'demo' : 'live');
-    document.querySelectorAll('input[name="mode"]').forEach(r=>{ r.checked = (r.value === defaultMode); });
-    const note = document.getElementById('modeNote');
-    if(!note) return;
-    if(defaultMode==='demo'){
-      note.innerHTML = '<span class="pill">Demo mode on</span> Opened as a file, so web calls are off. Host to enable Live.';
-    } else {
-      note.textContent = 'Live mode — ClinicalTrials.gov enabled';
-    }
+  function val(id){ return (document.getElementById(id).value||'').trim(); }
+  function term(){
+    const q = val('q');
+    const p = document.getElementById('phase').value;
+    // Build a human-friendly query string (we do not rely on exact param names of other sites)
+    return [q, p && `"${p}"`].filter(Boolean).join(' ');
   }
 
-  function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
-
-  // DEMO dataset with coordinates (offline-ready)
-  const demoTrials = [
-    { id:'NCT04212345', title:'(DEMO) Phase 2 Study for U2AF1 Mutations', phase:'Phase 2', status:'Recruiting', sponsor:'Example Cancer Center', city:'Houston', state:'TX', country:'USA', contactEmail:'demo1@center.org', coords:[29.7604,-95.3698] },
-    { id:'NCT04123456', title:'(DEMO) Inqovi Dosing Optimization', phase:'Phase 2', status:'Active, not recruiting', sponsor:'Example University', city:'Milwaukee', state:'WI', country:'USA', contactEmail:'demo2@center.org', coords:[43.0389,-87.9065] },
-    { id:'NCT04098765', title:'(DEMO) Canakinumab in Clonal Cytopenia', phase:'Phase 2', status:'Enrolling by invitation', sponsor:'Example Hospital', city:'Boston', state:'MA', country:'USA', contactEmail:'demo3@center.org', coords:[42.3601,-71.0589] }
-  ];
-
-  async function runSearch(){
-    const resultsEl = document.getElementById('results');
-    const q = document.getElementById('condition').value.trim();
-    const mode = getMode();
-
-    if(mode === 'demo'){
-      const list = demoTrials.filter(t => !q || (t.title+' '+t.id).toLowerCase().includes(q.toLowerCase()));
-      currentTrials = list;
-      renderResults(list, {demo:true});
-      plotMarkers(list);
-      return;
-    }
-
-    if(!q){ resultsEl.innerHTML = '<div class="muted">Enter a condition, gene, or keyword to search.</div>'; plotMarkers([]); return; }
-
-    const fields = [
-      'NCTId','BriefTitle','Condition','OverallStatus','Phase','LeadSponsorName',
-      'LocationCity','LocationState','LocationCountry','CentralContactName','CentralContactEMail','CentralContactPhone'
-    ];
-    const url = `https://clinicaltrials.gov/api/query/study_fields?expr=${encodeURIComponent(q)}&fields=${fields.join(',')}&min_rnk=1&max_rnk=40&fmt=json`;
-
-    resultsEl.innerHTML = '<div class="muted">Searching ClinicalTrials.gov…</div>';
-
-    try{
-      const res = await fetch(url, {mode:'cors'});
-      if(!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      const rows = (data?.StudyFieldsResponse?.StudyFields || []);
-      currentTrials = rows.map(r => ({
-        id: (r.NCTId||[])[0] || 'N/A',
-        title: (r.BriefTitle||[])[0] || 'Untitled study',
-        status: (r.OverallStatus||[])[0] || '',
-        phase: (r.Phase||[])[0] || '',
-        sponsor: (r.LeadSponsorName||[])[0] || '',
-        city: (r.LocationCity||[])[0] || '',
-        state: (r.LocationState||[])[0] || '',
-        country: (r.LocationCountry||[])[0] || '',
-        contactName: (r.CentralContactName||[])[0] || '',
-        contactEmail: (r.CentralContactEMail||[])[0] || '',
-        contactPhone: (r.CentralContactPhone||[])[0] || ''
-      })).filter(t => t.id && t.id.startsWith('NCT'));
-
-      renderResults(currentTrials, {demo:false});
-      plotMarkers(await geocodeTrials(currentTrials.slice(0,15)));
-    }catch(err){
-      console.error('Fetch error:', err);
-      resultsEl.innerHTML = '<div class="muted">Could not fetch live results. If you are opening this file directly, toggle Demo mode above, or host this file on a web server.</div>';
-      plotMarkers([]);
-    }
+  function openCtGov(){
+    const q = term();
+    const recruiting = document.getElementById('recr').checked;
+    // Use term-based search to avoid fragile params; user can refine on ct.gov UI
+    let url = 'https://clinicaltrials.gov/ct2/results?';
+    const params = new URLSearchParams();
+    if(q) params.set('term', q);
+    if(recruiting) params.set('recrs', 'ab'); // show recruiting & not yet recruiting (broad) — safe default
+    // Note: Different deployments of ct.gov accept various flags; if ignored, page still loads with term
+    url += params.toString();
+    window.open(url, '_blank', 'noopener');
   }
 
-  function renderResults(list, opts={demo:false}){
-    document.getElementById('results').innerHTML = list.map(t => `
-      <div class="trial-row">
-        <div><strong>${t.id}</strong> — ${escapeHtml(t.title)} ${t.phase?`<span class='badge'>${escapeHtml(t.phase)}</span>`:''} ${t.status?`<span class='badge'>${escapeHtml(t.status)}</span>`:''} ${opts.demo?`<span class='pill'>Demo</span>`:''}</div>
-        <div class="muted">${[t.city,t.state,t.country].filter(Boolean).join(', ') || 'Location not listed'} ${t.sponsor?`· Sponsor: ${escapeHtml(t.sponsor)}`:''}</div>
-        <div class="row" style="margin-top:6px">
-          <button class="button" onclick="showDetails('${t.id}')">Details</button>
-          ${opts.demo
-            ? `<span class='muted'>ClinicalTrials.gov link disabled in demo</span>`
-            : `<a class="button secondary" target="_blank" rel="noopener" href="https://clinicaltrials.gov/study/${t.id}">ClinicalTrials.gov</a>`}
-          ${t.contactEmail && !opts.demo ? `<a class="button secondary" href="mailto:${t.contactEmail}?subject=${encodeURIComponent('Inquiry about '+t.id)}">Email Coordinator</a>` : ''}
-        </div>
-      </div>
-    `).join('') || '<div class="muted">No results found.</div>';
+  function openWHO(){
+    // WHO ICTRP public search; if q unsupported as param, landing page still opens
+    const q = term();
+    const url = q ? `https://trialsearch.who.int/?q=${encodeURIComponent(q)}` : 'https://trialsearch.who.int/';
+    window.open(url, '_blank', 'noopener');
   }
 
-  async function geocodeTrials(trials){
-    const out = [];
-    for(const t of trials){
-      const key = [t.city,t.state,t.country].filter(Boolean).join(', ');
-      if(!key){ out.push({...t}); continue; }
-      if(geocodeCache[key]){ out.push({...t, coords: geocodeCache[key]}); continue; }
-      try{
-        const g = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(key)}`);
-        const arr = await g.json();
-        if(arr && arr[0]){
-          const coords = [parseFloat(arr[0].lat), parseFloat(arr[0].lon)];
-          geocodeCache[key] = coords;
-          out.push({...t, coords});
-        }else{ out.push({...t}); }
-      }catch(e){ out.push({...t}); }
-    }
-    return out;
+  function openEU(){
+    // EU Clinical Trials Information System — public search
+    const q = term();
+    const url = q ? `https://euclinicaltrials.eu/ctis-public/#/search?text=${encodeURIComponent(q)}` : 'https://euclinicaltrials.eu/ctis-public/#/search';
+    window.open(url, '_blank', 'noopener');
   }
 
-  function plotMarkers(list){
-    // clear existing markers (remove only markers, keep tile layer)
-    map.eachLayer(l => { if(l instanceof L.Marker) map.removeLayer(l); });
-    list.forEach(t => {
-      if(!t.coords) return;
-      L.marker(t.coords).addTo(map).bindPopup(`
-        <strong>${escapeHtml(t.title)}</strong><br>${escapeHtml([t.city,t.state,t.country].filter(Boolean).join(', '))}<br>
-        <button style="margin-top:6px" onclick="showDetails('${t.id}')">Details</button>
-      `);
-    });
-  }
-
-  function showDetails(id){
-    const t = currentTrials.find(x=>x.id===id) || demoTrials.find(x=>x.id===id); if(!t) return;
-    document.getElementById('modalTitle').textContent = `${t.title} (${t.id})`;
-    const cLine = t.contactEmail || t.contactPhone ? `<p><strong>Contact:</strong> ${escapeHtml([t.contactName,t.contactEmail,t.contactPhone].filter(Boolean).join(' — '))}</p>` : '';
-    const isDemo = demoTrials.some(x=>x.id===id);
-    document.getElementById('modalBody').innerHTML = `
-      <p><strong>Status:</strong> ${escapeHtml(t.status||'—')} · <strong>Phase:</strong> ${escapeHtml(t.phase||'—')}</p>
-      <p><strong>Sponsor:</strong> ${escapeHtml(t.sponsor||'—')}</p>
-      <p><strong>Location:</strong> ${escapeHtml([t.city,t.state,t.country].filter(Boolean).join(', ')||'—')}</p>
-      ${cLine}
-      <div class="row" style="margin-top:8px">
-        ${isDemo ? `<span class='muted'>ClinicalTrials.gov link disabled in demo</span>` : `<a class="button" target="_blank" rel="noopener" href="https://clinicaltrials.gov/study/${t.id}">Open on ClinicalTrials.gov</a>`}
-        ${t.contactEmail && !isDemo ? `<a class="button secondary" href="mailto:${t.contactEmail}?subject=${encodeURIComponent('Inquiry about '+t.id)}">Email Coordinator</a>` : ''}
-      </div>
-    `;
-    document.getElementById('detailsModal').setAttribute('aria-hidden','false');
-  }
-  function closeModal(){ document.getElementById('detailsModal').setAttribute('aria-hidden','true'); }
-
-  // NIH tools — Grants (RePORTER) & PubMed
-  function searchNIHGrants(){
-    const q = document.getElementById('nihq').value.trim();
-    const mode = getMode();
-    const out = document.getElementById('nihResults');
-    if(!q){ out.innerHTML = '<div class="muted">Enter a topic to search NIH RePORTER and PubMed.</div>'; return; }
-    if(mode==='demo'){
-      out.innerHTML = `
-        <div class='trial-row'><strong>(DEMO) U2AF1 Splicing in Myeloid Disease</strong> — Project (R01), FY2024 · PI: Smith · Institute: NCI</div>
-        <div class='trial-row'><strong>(DEMO) Inflammation and Clonal Hematopoiesis</strong> — Project (R21), FY2023 · PI: Lee · Institute: NHLBI</div>
-        <div class='muted'>Demo mode: Open real search at <a target='_blank' rel='noopener' href='https://reporter.nih.gov/search/?terms=${encodeURIComponent(q)}'>NIH RePORTER</a></div>`;
-      return;
-    }
-    window.open(`https://reporter.nih.gov/search/?terms=${encodeURIComponent(q)}`,'_blank','noopener');
-    out.innerHTML = `<div class='muted'>Opened NIH RePORTER in a new tab. If blocked, click here: <a target='_blank' rel='noopener' href='https://reporter.nih.gov/search/?terms=${encodeURIComponent(q)}'>NIH RePORTER</a></div>`;
-  }
   function openPubMed(){
-    const q = document.getElementById('nihq').value.trim();
-    if(!q){ document.getElementById('nihResults').innerHTML = '<div class="muted">Enter a topic to search PubMed.</div>'; return; }
-    window.open(`https://pubmed.ncbi.nlm.nih.gov/?term=${encodeURIComponent(q)}`,'_blank','noopener');
+    const q = term();
+    const url = `https://pubmed.ncbi.nlm.nih.gov/?term=${encodeURIComponent(q || 'clinical trial')}`;
+    window.open(url, '_blank', 'noopener');
   }
 
-  // Init
-  setInitialMode();
-  runSearch();
+  function openRePORTER(){
+    const q = term();
+    const url = `https://reporter.nih.gov/search/?terms=${encodeURIComponent(q || 'cancer')}`;
+    window.open(url, '_blank', 'noopener');
+  }
 </script>
 </body>
 </html>
