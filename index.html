@@ -1,125 +1,233 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Journey to Health — Trials Finder (Reliable Embed-first)</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Search for Clinical Trials</title>
 <style>
-  :root { color-scheme: light; }
-  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background: #f5f8fb; }
-  header { background: #0b6ea9; color: #fff; padding: 16px; text-align: center; font-weight: 600; }
-  .wrap { max-width: 1000px; margin: 0 auto; padding: 20px; }
-  .card { background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.05); padding: 16px; margin: 12px 0; }
-  h2 { margin: 0 0 10px; color: #0b6ea9; font-size: 1.2rem; }
-  .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center }
-  label { font-size: 14px; color: #234; }
-  input, select { padding: 10px; border: 1px solid #d8e2ea; border-radius: 8px; font: inherit; }
-  input[type="checkbox"] { width: auto; height: auto; }
+  body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f9fbfd; }
+  header { background: #0b6ea9; color: white; padding: 16px; text-align: center; font-size: 1.5rem; }
+  .container { padding: 20px; max-width: 1000px; margin: auto; }
+  .card { background: white; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.06); padding: 16px; margin: 20px 0; }
+  h2 { color: #0b6ea9; margin-top: 0; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; }
+  input, textarea { padding:10px; border-radius:8px; border:1px solid #d7e2ea; min-width:260px; }
+  textarea { width: 100%; min-height: 80px; resize: vertical; }
+  .button { display: inline-block; padding: 8px 12px; background: #0b6ea9; color: white; text-decoration: none; border-radius: 8px; cursor: pointer; border: none; }
+  .button.secondary { background: #e8f1f9; color: #0b3a55; }
   .muted { color: #5a6b78; font-size: 13px; }
-  .btn { background:#0b6ea9; color:#fff; border:none; border-radius:8px; padding:10px 14px; cursor:pointer; }
-  .btn.secondary { background:#e8f1f9; color:#0b3a55; }
-  .block-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px }
-  .sublink { font-size: 12px; }
-  .hr { height:1px; background:#ecf1f5; margin:12px 0 }
-  .pill { display:inline-block; padding:2px 6px; border-radius:999px; background:#fff3cd; color:#7a4d00; border:1px solid #ffe08a; font-size:12px }
+  /* Modal */
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 1000; }
+  .modal[aria-hidden="false"]{ display:flex; }
+  .modal-card { background:#fff; max-width: 800px; width:100%; border-radius:12px; padding:16px; box-shadow:0 12px 32px rgba(0,0,0,.25); }
+  .modal-head { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .modal-foot { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:12px; }
+  .disclaimer { font-size:12px; color:#6b7280; }
 </style>
 </head>
 <body>
-<header>Journey to Health — Clinical Trials Finder</header>
-<div class="wrap">
-
+<header>Search for Clinical Trials</header>
+<div class="container">
+  <!-- Clinical Trials Search -->
   <div class="card">
-    <h2>Patient-friendly search (opens official sites)</h2>
-    <p class="muted">Best for reliability today. Enter what you’re looking for and we’ll open matching searches on official registries in new tabs. You can refine on those pages without any blockers.</p>
-
+    <h2>Search for Clinical Trials</h2>
     <div class="row">
-      <label>Condition / keywords<br>
-        <input id="q" placeholder="e.g., myelodysplastic syndrome, U2AF1, clonal cytopenia" style="min-width:320px">
-      </label>
-      <label>Recruiting only<br>
-        <input id="recr" type="checkbox"> <span class="muted">applies on ClinicalTrials.gov page</span>
-      </label>
-      <label>Phase (optional)<br>
-        <select id="phase">
-          <option value="">Any</option>
-          <option>Phase 1</option>
-          <option>Phase 2</option>
-          <option>Phase 3</option>
-          <option>Phase 4</option>
-        </select>
-      </label>
+      <input id="condition" placeholder="Enter condition, gene, or keyword (e.g., CCUS, U2AF1)" />
+      <button class="button" onclick="searchTrials()">Search</button>
+      <button class="button secondary" onclick="document.getElementById('condition').value='';">Reset</button>
     </div>
-
-    <div class="block-actions">
-      <button class="btn" onclick="openCtGov()">Open ClinicalTrials.gov</button>
-      <button class="btn secondary" onclick="openWHO()">Open WHO (global)</button>
-      <button class="btn secondary" onclick="openEU()">Open EU CTIS</button>
-      <button class="btn secondary" onclick="openPubMed()">Open PubMed (papers)</button>
-      <button class="btn secondary" onclick="openRePORTER()">Open NIH RePORTER (grants)</button>
-    </div>
-
-    <div class="hr"></div>
-    <p class="muted"><span class="pill">Tip</span> Start with ClinicalTrials.gov for U.S. coverage. Use WHO and EU CTIS to widen globally. PubMed/RePORTER give background on who’s active in the field.</p>
+    <div id="results" style="margin-top:20px"></div>
   </div>
 
+  <!-- Pre-Clinical Trial Research -->
   <div class="card">
-    <h2>What we’ll build next</h2>
-    <ul class="muted" style="margin:0 0 0 16px">
-      <li>Unified results list here with simple language and contact buttons</li>
-      <li>Filters: distance from ZIP, age/sex eligibility, phase toggles</li>
-      <li>“Why this might fit you” notes and a printable summary</li>
-    </ul>
+    <h2>Search Here for Pre-Clinical Trial Research</h2>
+    <p class="muted">Use these tools to discover related NIH-funded grants and published research articles.</p>
+    <div class="row">
+      <input id="nihq" placeholder="Enter topic, gene, or condition" />
+      <button class="button" onclick="searchNIHGrants()">Search NIH Grants</button>
+      <button class="button secondary" onclick="searchPubMed()">Search PubMed</button>
+    </div>
   </div>
 
+  <!-- Email Trial Coordinator -->
+  <div class="card">
+    <h2>Contact Trial Coordinator</h2>
+    <p class="muted">Send an inquiry to the trial coordinator for more information.</p>
+    <input id="trialId" placeholder="Enter NCT Number" />
+    <input id="yourName" placeholder="Your Name" />
+    <input id="yourEmail" type="email" placeholder="Your Email" />
+    <textarea id="message" placeholder="Your message to the coordinator..."></textarea>
+    <button class="button" onclick="sendEmail()">Send Email</button>
+    <div id="emailStatus" style="margin-top:10px" class="muted"></div>
+  </div>
+</div>
+
+<!-- Plain‑language Explanation Modal -->
+<div id="explainModal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="explainTitle">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3 id="explainTitle" style="margin:0;color:#0b6ea9">Plain‑language summary</h3>
+      <div>
+        <button class="button secondary" onclick="copyExplanation()">Copy</button>
+        <button class="button secondary" onclick="printExplanation()">Print</button>
+        <button class="button" onclick="closeExplain()">Close</button>
+      </div>
+    </div>
+    <div id="explainBody" class="muted" style="margin-top:10px;white-space:pre-wrap"></div>
+    <div class="modal-foot">
+      <span class="disclaimer">This summary is for information only and is not medical advice. Always discuss options with your clinician.</span>
+    </div>
+  </div>
 </div>
 
 <script>
-  function val(id){ return (document.getElementById(id).value||'').trim(); }
-  function term(){
-    const q = val('q');
-    const p = document.getElementById('phase').value;
-    // Build a human-friendly query string (we do not rely on exact param names of other sites)
-    return [q, p && `"${p}"`].filter(Boolean).join(' ');
+let lastStudies = [];
+
+function safeText(x){ return (x||'').toString(); }
+function arr(x){ return Array.isArray(x)?x: (x? [x] : []); }
+
+function searchTrials(){
+  const q = document.getElementById('condition').value.trim();
+  const out = document.getElementById('results');
+  if(!q){ out.innerHTML = '<div class="muted">Enter a keyword to search ClinicalTrials.gov.</div>'; return; }
+  const url = `https://clinicaltrials.gov/api/query/full_studies?expr=${encodeURIComponent(q)}&min_rnk=1&max_rnk=10&fmt=json`;
+  out.innerHTML = '<div class="muted">Searching…</div>';
+  fetch(url)
+    .then(res => res.json())
+    .then(data => {
+      lastStudies = data?.FullStudiesResponse?.FullStudies || [];
+      if(!lastStudies.length){ out.innerHTML = '<div class="muted">No trials found.</div>'; return; }
+      out.innerHTML = lastStudies.map(s => renderStudyRow(s)).join('');
+    })
+    .catch(() => { out.innerHTML = '<div class="muted">Error fetching trials.</div>'; });
+}
+
+function renderStudyRow(s){
+  const idm = s?.Study?.ProtocolSection?.IdentificationModule || {};
+  const nct = safeText(idm.NCTId);
+  const title = safeText(idm.BriefTitle);
+  const contact = s?.Study?.ProtocolSection?.ContactsLocationsModule?.OverallOfficialList?.OverallOfficial?.[0]?.OverallOfficialEmail || '';
+  const emailBtn = contact ? `<button class=\"button secondary\" onclick=\"prefillEmail('${nct}','${contact}')\">Email Coordinator</button>` : '';
+  const explainBtn = `<button class=\"button secondary\" onclick=\"openExplain('${nct}')\">Explain in plain language</button>`;
+  return `<div style='margin-bottom:12px'>
+    <strong>${title}</strong> (<a target="_blank" href="https://clinicaltrials.gov/study/${nct}">${nct}</a>)
+    <div class="row" style="margin-top:6px">${emailBtn} ${explainBtn}</div>
+  </div>`;
+}
+
+function openExplain(nct){
+  const s = lastStudies.find(x => x?.Study?.ProtocolSection?.IdentificationModule?.NCTId === nct);
+  if(!s){ return; }
+  const m = s.Study.ProtocolSection;
+  const id = m.IdentificationModule || {};
+  const status = m.StatusModule || {};
+  const design = m.DesignModule || {};
+  const elig = m.EligibilityModule || {};
+  const desc = m.DescriptionModule || {};
+  const arms = m.ArmsInterventionsModule || {};
+  const locs = m.ContactsLocationsModule || {};
+
+  const title = safeText(id.BriefTitle || id.OfficialTitle || nct);
+  const condition = arr(m.ConditionsModule?.ConditionList?.Condition).join(', ');
+  const phase = arr(design.PhaseList?.Phase).join(', ');
+  const stat = safeText(status.OverallStatus);
+  const purpose = safeText(desc.BriefSummary || desc.DetailedDescription || '').trim();
+
+  const minAge = safeText(elig.MinimumAge);
+  const maxAge = safeText(elig.MaximumAge);
+  const sex = safeText(elig.Sex);
+  const healthy = (elig.HealthyVolunteers ? 'Healthy volunteers accepted' : 'Patient volunteers only');
+
+  const inclus = safeText(elig?.InclusionCriteria || '').split(/\r?\n/).filter(Boolean).slice(0,6);
+  const exclus = safeText(elig?.ExclusionCriteria || '').split(/\r?\n/).filter(Boolean).slice(0,6);
+
+  const interventions = arr(arms?.InterventionList?.Intervention).map(i=>safeText(i.InterventionName)).filter(Boolean).slice(0,6);
+
+  const places = arr(locs?.LocationList?.Location).map(l=>{
+    const city = safeText(l.LocationCity);
+    const st = safeText(l.LocationState);
+    const country = safeText(l.LocationCountry);
+    return [city,st,country].filter(Boolean).join(', ');
+  }).filter(Boolean).slice(0,6);
+
+  const lines = [];
+  lines.push(`Study: ${title}`);
+  lines.push(`NCT ID: ${nct}`);
+  if(condition) lines.push(`Condition: ${condition}`);
+  if(phase) lines.push(`Phase: ${phase}`);
+  if(stat) lines.push(`Status: ${stat}`);
+
+  if(purpose){
+    const shortPurpose = purpose.length>800 ? purpose.slice(0,780)+"…" : purpose;
+    lines.push("\nWhat is this study about?\n" + shortPurpose);
   }
 
-  function openCtGov(){
-    const q = term();
-    const recruiting = document.getElementById('recr').checked;
-    // Use term-based search to avoid fragile params; user can refine on ct.gov UI
-    let url = 'https://clinicaltrials.gov/ct2/results?';
-    const params = new URLSearchParams();
-    if(q) params.set('term', q);
-    if(recruiting) params.set('recrs', 'ab'); // show recruiting & not yet recruiting (broad) — safe default
-    // Note: Different deployments of ct.gov accept various flags; if ignored, page still loads with term
-    url += params.toString();
-    window.open(url, '_blank', 'noopener');
-  }
+  const who = [];
+  if(minAge) who.push(`Minimum age: ${minAge}`);
+  if(maxAge) who.push(`Maximum age: ${maxAge}`);
+  if(sex) who.push(`Sex: ${sex}`);
+  if(healthy) who.push(healthy);
+  if(who.length) lines.push("\nWho might be able to join?\n" + who.join(" · "));
 
-  function openWHO(){
-    // WHO ICTRP public search; if q unsupported as param, landing page still opens
-    const q = term();
-    const url = q ? `https://trialsearch.who.int/?q=${encodeURIComponent(q)}` : 'https://trialsearch.who.int/';
-    window.open(url, '_blank', 'noopener');
-  }
+  if(inclus.length) lines.push("\nKey things they look for:\n- " + inclus.join("\n- "));
+  if(exclus.length) lines.push("\nYou likely can’t join if:\n- " + exclus.join("\n- "));
 
-  function openEU(){
-    // EU Clinical Trials Information System — public search
-    const q = term();
-    const url = q ? `https://euclinicaltrials.eu/ctis-public/#/search?text=${encodeURIComponent(q)}` : 'https://euclinicaltrials.eu/ctis-public/#/search';
-    window.open(url, '_blank', 'noopener');
-  }
+  if(interventions.length) lines.push("\nWhat will happen in this study?\n- " + interventions.map(x=>`Intervention: ${x}`).join("\n- "));
 
-  function openPubMed(){
-    const q = term();
-    const url = `https://pubmed.ncbi.nlm.nih.gov/?term=${encodeURIComponent(q || 'clinical trial')}`;
-    window.open(url, '_blank', 'noopener');
-  }
+  if(places.length) lines.push("\nWhere is this offered?\n- " + places.join("\n- "));
 
-  function openRePORTER(){
-    const q = term();
-    const url = `https://reporter.nih.gov/search/?terms=${encodeURIComponent(q || 'cancer')}`;
-    window.open(url, '_blank', 'noopener');
+  lines.push("\nTip: Talk to your clinician. This summary is informational and not medical advice.");
+
+  document.getElementById('explainTitle').textContent = `Plain‑language summary — ${nct}`;
+  document.getElementById('explainBody').textContent = lines.join('\n');
+  document.getElementById('explainModal').setAttribute('aria-hidden','false');
+}
+
+function closeExplain(){ document.getElementById('explainModal').setAttribute('aria-hidden','true'); }
+function copyExplanation(){
+  const text = document.getElementById('explainBody').textContent;
+  navigator.clipboard.writeText(text).then(()=>{ alert('Summary copied to clipboard'); }).catch(()=>{ prompt('Copy this summary:', text); });
+}
+function printExplanation(){
+  const title = document.getElementById('explainTitle').textContent;
+  const body = document.getElementById('explainBody').textContent + "\n\nThis summary is for information only and is not medical advice.";
+  const w = window.open('', '_blank');
+  w.document.write('<pre style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; white-space: pre-wrap; line-height:1.3;">');
+  w.document.write(title + "\n\n" + body.replace(/</g,'&lt;').replace(/>/g,'&gt;'));
+  w.document.write('</pre>');
+  w.document.close();
+  w.focus();
+  w.print();
+}
+
+function searchNIHGrants(){
+  const q = document.getElementById('nihq').value.trim();
+  if(!q) return;
+  window.open(`https://reporter.nih.gov/search/?terms=${encodeURIComponent(q)}`,'_blank');
+}
+function searchPubMed(){
+  const q = document.getElementById('nihq').value.trim();
+  if(!q) return;
+  window.open(`https://pubmed.ncbi.nlm.nih.gov/?term=${encodeURIComponent(q)}`,'_blank');
+}
+function prefillEmail(nct,email){
+  document.getElementById('trialId').value = nct;
+  document.getElementById('message').value = `Hello, I am interested in learning more about trial ${nct}.`;
+}
+function sendEmail(){
+  const trialId = document.getElementById('trialId').value.trim();
+  const name = document.getElementById('yourName').value.trim();
+  const email = document.getElementById('yourEmail').value.trim();
+  const message = document.getElementById('message').value.trim();
+  if(!trialId || !name || !email || !message){
+    document.getElementById('emailStatus').innerText = 'Please fill in all fields.';
+    return;
   }
+  const mailtoLink = `mailto:?subject=Inquiry about trial ${trialId}&body=${encodeURIComponent(message + '\n\nFrom: ' + name + ' (' + email + ')')}`;
+  window.location.href = mailtoLink;
+  document.getElementById('emailStatus').innerText = 'Email client opened to send your message.';
+}
 </script>
 </body>
 </html>
